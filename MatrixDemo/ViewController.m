@@ -32,6 +32,7 @@ static NSString  *HomeServer = @"https://matrix.org";
 
 -(void)initMatrix{
     self.mxRestClient = [[MXRestClient alloc] initWithHomeServer:HomeServer andOnUnrecognizedCertificateBlock:nil];
+    
 }
 
 
@@ -86,6 +87,35 @@ static NSString  *HomeServer = @"https://matrix.org";
 
     }];
 }
+
+/// 获取房间的消息
+-(void)getRoomMessage{
+    // 从房间 id 中获取房间
+    MXRoom *room = [self.mxSession roomWithRoomId:self.rooms.firstObject.roomId];
+
+    // 添加与此房间相关的事件的侦听器
+    [room listenToEvents:^(MXEvent * _Nonnull event, MXTimelineDirection direction, MXRoomState * _Nullable roomState) {
+        if(direction == MXTimelineDirectionForwards){
+            // 直播/新活动来这里
+        }else if (direction == MXTimelineDirectionBackwards) {
+            // 过去发生的事件在请求分页时会到这里。
+            // roomState 包含此事件发生之前房间的状态。
+        }
+    }];
+    
+    // 将分页起点重置为现在
+    [room liveTimeline:^(id<MXEventTimeline> liveTimeline) {
+        [liveTimeline paginate:NSUIntegerMax
+                     direction:MXTimelineDirectionBackwards
+                 onlyFromStore:YES
+                      complete:^{
+            [liveTimeline resetPagination];
+        } failure:^(NSError * _Nonnull error) {
+        }];
+    }];
+}
+
+
 
 -(void)setTextViewWithAction:(NSString *)action text:(NSString *)text{
     
